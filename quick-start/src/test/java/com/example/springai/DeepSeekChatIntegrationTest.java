@@ -4,9 +4,9 @@ import com.example.springai.service.ChatService;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.deepseek.DeepSeekAssistantMessage;
+import org.springframework.ai.deepseek.DeepSeekChatModel;
 import org.springframework.ai.deepseek.DeepSeekChatOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,14 +25,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * DEEPSEEK_API_KEY=sk-xxx ./mvnw -pl quick-start test -Dtest=DeepSeekChatIntegrationTest
  * </pre>
  */
-@SpringBootTest
+@SpringBootTest(properties = "spring.ai.dashscope.api-key=test-key")
 class DeepSeekChatIntegrationTest {
 
     @Autowired
     private ChatService chatService;
 
+    /** 注入具体类型：应用中同时存在 dashScopeChatModel 与 deepSeekChatModel 两个 ChatModel bean */
     @Autowired
-    private ChatModel chatModel;
+    private DeepSeekChatModel chatModel;
 
     @Test
     void chatReturnsReply() {

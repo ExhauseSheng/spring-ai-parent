@@ -2,25 +2,38 @@ package com.example.springai.service;
 
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.api.Advisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.UUID;
 
 /**
  * 阿里云百炼（DashScope）对话服务：调用 Qwen 系列模型。
- * 与 {@link ChatService}（DeepSeek）并行存在，各自注入具体的 ChatModel 实现类。
+ * 公共 Advisor（日志、耗时、敏感词过滤、多轮记忆）由 {@code AdvisorConfig} 统一装配。
  */
 @Service
 public class BailianChatService {
 
     private final ChatClient chatClient;
 
-    public BailianChatService(DashScopeChatModel chatModel) {
+    public BailianChatService(DashScopeChatModel chatModel, List<Advisor> advisors) {
         this.chatClient = ChatClient.builder(chatModel)
                 .defaultSystem("你是一个乐于助人的中文助手。")
+                .defaultAdvisors(advisors)
                 .build();
     }
 
+    /** 单轮调用：每次生成独立会话 ID，不携带历史 */
     public String chat(String message) {
+        return chat(message, UUID.randomUUID().toString());
+    }
+
+    /** 多轮调用：传入相同 conversationId 即可携带历史 */
+    public String chat(String message, String conversationId) {
         return chatClient.prompt()
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .user(message)
                 .call()
                 .content();

@@ -1,0 +1,46 @@
+# 统一配置文件：Spring 以 UTF-8 读取 YAML，中文安全；
+# .properties 由 Spring 以 ISO-8859-1 读取，中文会乱码，故不使用
+
+spring:
+  application:
+    name: quick-start
+  ai:
+    # ---- DeepSeek ----
+    # API Key 从环境变量读取（在 https://platform.deepseek.com 创建）
+    deepseek:
+      api-key: "${DEEPSEEK_API_KEY}"
+      chat:
+        options:
+          # 可选模型：deepseek-chat（对话）、deepseek-reasoner（推理）
+          model: deepseek-chat
+    # ---- 阿里云百炼（DashScope / Qwen）----
+    # API Key 从环境变量读取（百炼控制台 https://bailian.console.aliyun.com 创建）
+    # 留空时百炼自动装配会跳过，不影响其他功能
+    dashscope:
+      api-key: "${DASHSCOPE_API_KEY:}"
+      chat:
+        options:
+          model: qwen-plus
+    # ---- Ollama 本地模型 ----
+    # 需先启动 Ollama 并 `ollama pull qwen3:8b`（本地无需代理）
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        options:
+          model: qwen3:8b
+
+server:
+  port: 8080
+
+app:
+  chat:
+    # 多轮对话记忆：窗口式 ChatMemory，保留每个会话最近 N 条消息（内存存储，重启即清空）
+    memory:
+      max-messages: 20
+    # 敏感词过滤（逗号分隔）：SafeGuardAdvisor 拦截输入 + SensitiveWordFilterAdvisor 打码输出
+    sensitive-words: 傻瓜,笨蛋
+
+logging:
+  level:
+    # 日志 Advisor（SimpleLoggerAdvisor 用 DEBUG 级别打印请求/响应）
+    "org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor": DEBUG

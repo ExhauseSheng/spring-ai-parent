@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -63,6 +64,34 @@ class DeepSeekChatIntegrationTest {
         assertThat(reply)
                 .as("拼接后的完整回复应非空")
                 .isNotBlank();
+    }
+
+    /** 敏感词拦截：输入含敏感词时 SafeGuardAdvisor 短路拒答，不请求模型 */
+    @Test
+    void sensitiveWordsAreBlocked() {
+        String reply = chatService.chat("我骂你：你是个傻瓜，听懂了吗");
+
+        System.out.println("敏感词拦截回复: " + reply);
+
+        assertThat(reply)
+                .as("含敏感词的输入应被 SafeGuardAdvisor 拦截并返回拒绝话术")
+                .doesNotContain("傻瓜")
+                .contains("敏感词");
+    }
+
+    /** 多轮记忆：相同 conversationId 携带历史，第二轮应记起第一轮的信息 */
+    @Test
+    void multiTurnMemoryRecallsHistory() {
+        String conversationId = "mem-" + UUID.randomUUID();
+
+        chatService.chat("我叫小明，请记住我的名字", conversationId);
+        String reply = chatService.chat("我叫什么名字？只回答名字", conversationId);
+
+        System.out.println("记忆测试回复: " + reply);
+
+        assertThat(reply)
+                .as("第二轮应记起第一轮告知的信息（多轮记忆生效）")
+                .contains("小明");
     }
 
     /**

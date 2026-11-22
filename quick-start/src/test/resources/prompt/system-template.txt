@@ -1,0 +1,1 @@
+单括号:{role} / 双括号:{{role}} / 尖括号:<role> / SpEL:#{role}

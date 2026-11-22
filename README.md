@@ -7,6 +7,7 @@ Spring AI 多模块项目（Spring Boot 3 + JDK 17）。
 - Spring Boot 3.5.16
 - Spring AI 1.1.8（BOM 统一管理版本）
 - Spring AI Alibaba 1.1.2.3（阿里云百炼 / DashScope）
+- Ollama（本地大模型，当前接入 qwen3:8b）
 - Java 17（`<java.version>17</java.version>`，高版本 JDK 也可编译运行）
 - Maven（已含 Maven Wrapper：`mvnw` / `mvnw.cmd`）
 
@@ -19,16 +20,19 @@ spring-ai-parent/            父工程（packaging=pom，统一依赖与版本�
     │   ├── QuickStartApplication.java          启动类
     │   ├── service/ChatService.java            DeepSeek 对话服务（Spring AI ChatClient）
     │   ├── service/BailianChatService.java     阿里云百炼对话服务（Qwen）
+    │   ├── service/OllamaChatService.java      Ollama 本地模型对话服务（qwen3:8b）
     │   ├── web/ChatController.java             DeepSeek 接口 POST /api/chat（含流式 /stream）
-    │   └── web/BailianChatController.java      百炼接口 POST /api/bailian/chat
-    └── src/main/resources/application.properties   DeepSeek + 百炼配置
+    │   ├── web/BailianChatController.java      百炼接口 POST /api/bailian/chat
+    │   └── web/OllamaChatController.java       Ollama 接口 POST /api/ollama/chat
+    └── src/main/resources/application.properties   DeepSeek + 百炼 + Ollama 配置
 ```
 
 ## 前置条件
 
 1. **DeepSeek**：在 [DeepSeek 开放平台](https://platform.deepseek.com) 创建 API Key
 2. **阿里云百炼**（可选）：在 [百炼控制台](https://bailian.console.aliyun.com) 创建 API Key
-3. 设置环境变量：
+3. **Ollama**（可选）：本地启动 Ollama 并 `ollama pull qwen3:8b`（默认端口 11434）
+4. 设置环境变量：
 
 ```bash
 export DEEPSEEK_API_KEY=sk-xxxxxxxx        # Windows: set DEEPSEEK_API_KEY=sk-xxxxxxxx
@@ -63,6 +67,11 @@ curl -X POST http://localhost:8080/api/chat \
 
 # 阿里云百炼（Qwen）对话
 curl -X POST http://localhost:8080/api/bailian/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "你好，介绍一下你自己"}'
+
+# Ollama 本地模型对话（需先启动 Ollama 并 pull qwen3:8b）
+curl -X POST http://localhost:8080/api/ollama/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "你好，介绍一下你自己"}'
 ```

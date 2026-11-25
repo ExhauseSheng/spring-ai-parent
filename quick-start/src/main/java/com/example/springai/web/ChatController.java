@@ -32,6 +32,17 @@ public class ChatController {
     }
 
     /**
+     * 带本地工具的对话：模型可调用 LocalTools 中注册的 @Tool 方法（查天气、查VIP等），
+     * 执行结果回传模型后生成最终回复。
+     * curl -X POST http://localhost:8080/api/chat/tools -H "Content-Type: application/json" -d '{"message":"查一下U10086的VIP等级和北京天气"}'
+     */
+    @PostMapping("/tools")
+    public ChatReply chatWithTools(@RequestBody ChatRequest request) {
+        String conversationId = resolveConversationId(request.conversationId());
+        return new ChatReply(chatService.chatWithTools(request.message(), conversationId), conversationId);
+    }
+
+    /**
      * 流式对话（SSE）：curl -N -X POST http://localhost:8080/api/chat/stream -H "Content-Type: application/json" -d '{"message":"你好","conversationId":"my-conv-1"}'
      * SSE 无法回传 ID，客户端需自带并复用 conversationId 以延续多轮记忆。
      */

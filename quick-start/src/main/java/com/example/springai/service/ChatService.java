@@ -1,5 +1,6 @@
 package com.example.springai.service;
 
+import com.example.springai.tools.LocalTools;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -24,11 +25,14 @@ public class ChatService {
 
     private final ChatClient chatClient;
 
-    public ChatService(DeepSeekChatModel chatModel, List<Advisor> advisors) {
+    private final LocalTools localTools;
+
+    public ChatService(DeepSeekChatModel chatModel, List<Advisor> advisors, LocalTools localTools) {
         this.chatClient = ChatClient.builder(chatModel)
                 .defaultSystem("你是一个乐于助人的中文助手。")
                 .defaultAdvisors(advisors)
                 .build();
+        this.localTools = localTools;
     }
 
     /**
@@ -45,6 +49,23 @@ public class ChatService {
         return chatClient.prompt()
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .user(message)
+                .call()
+                .content();
+    }
+
+    /**
+     * 带工具的对话：模型可发起 tool_call，在本地执行 {@link LocalTools} 的 @Tool 方法后
+     * 把结果回传模型继续生成（闭环由 Spring AI 自动完成，原理见 LocalTools 类注释）。
+     */
+    public String chatWithTools(String message) {
+        return chatWithTools(message, UUID.randomUUID().toString());
+    }
+
+    public String chatWithTools(String message, String conversationId) {
+        return chatClient.prompt()
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+                .user(message)
+                .tools(localTools)
                 .call()
                 .content();
     }

@@ -37,7 +37,7 @@ public class LocalTools {
     /** 工具执行轨迹（测试断言"本地确实执行过"用） */
     private final List<String> callTrail = new CopyOnWriteArrayList<>();
 
-    @Tool(description = "查询指定城市的当前天气状况与温度。当用户询问天气时必须调用本工具，严禁凭空编造天气。")
+    @Tool(name = "getCurrentWeather", description = "查询指定城市的当前天气状况与温度。当用户询问天气时必须调用本工具，严禁凭空编造天气。")
     public String getCurrentWeather(@ToolParam(description = "城市名，例如：北京") String city) {
         // 模拟本地数据源（真实项目里这里是查数据库 / 调内部接口）
         String result = city + "：晴，气温25°C，东南风3级";
@@ -46,7 +46,7 @@ public class LocalTools {
         return result;
     }
 
-    @Tool(description = "查询指定用户的VIP等级与有效期。当用户询问VIP/会员信息时必须调用本工具，严禁凭空编造。")
+    @Tool(name = "queryVipLevel", description = "查询指定用户的VIP等级与有效期。当用户询问VIP/会员信息时必须调用本工具，严禁凭空编造。")
     public String queryVipLevel(@ToolParam(description = "用户ID，例如：U10086") String userId) {
         String result = "用户" + userId + " 是黄金VIP，有效期至2027-12-31";
         callTrail.add("queryVipLevel(" + userId + ")");

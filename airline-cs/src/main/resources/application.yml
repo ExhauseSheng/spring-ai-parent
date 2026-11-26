@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: airline-cs
+  # 与 quick-start 共用本地 MySQL 的 spring_ai 库
+  datasource:
+    url: "jdbc:mysql://localhost:3306/spring_ai?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf-8"
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  # 启动执行 schema.sql（建对话记忆表与订单表）；订单种子数据由 OrderDataInitializer 写入
+  sql:
+    init:
+      mode: always
+  ai:
+    deepseek:
+      api-key: "${DEEPSEEK_API_KEY}"
+      chat:
+        options:
+          model: deepseek-chat
+          # 低温度降低"跳过工具/编造字段"的随机性（客服场景不需要创造性）
+          temperature: 0.2
+
+server:
+  # 8080 留给 quick-start，本模块用 8081（前端 dev server 代理到此）
+  port: 8081
+
+logging:
+  level:
+    # 打印发给模型的完整请求/响应（含注入的历史），用于排查对话问题
+    "org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor": DEBUG

@@ -5,9 +5,12 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.deepseek.DeepSeekChatModel;
+import org.springframework.ai.support.ToolCallbacks;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,12 +30,16 @@ public class ChatService {
 
     private final LocalTools localTools;
 
-    public ChatService(DeepSeekChatModel chatModel, List<Advisor> advisors, LocalTools localTools) {
+    private final ToolPermissionService toolPermissionService;
+
+    public ChatService(DeepSeekChatModel chatModel, List<Advisor> advisors, LocalTools localTools,
+                       ToolPermissionService toolPermissionService) {
         this.chatClient = ChatClient.builder(chatModel)
                 .defaultSystem("你是一个乐于助人的中文助手。")
                 .defaultAdvisors(advisors)
                 .build();
         this.localTools = localTools;
+        this.toolPermissionService = toolPermissionService;
     }
 
     /**
@@ -66,6 +73,29 @@ public class ChatService {
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .user(message)
                 .tools(localTools)
+                .call()
+                .content();
+    }
+
+    /**
+     * 按权限动态下发工具的对话，链路（原理见 ToolPermissionService 与 LocalTools 注释）：
+     * <ol>
+     *   <li>MySQL 查询该用户被授权的工具名（users→authorities→sys_role_tool→sys_tool）；</li>
+     *   <li>{@code ToolCallbacks.from(localTools)} 生成全部 @Tool 回调，按授权名单过滤；</li>
+     *   <li>{@code .toolCallbacks(过滤后列表)} —— 模型只"看得见"有权限的工具，
+     *       未授权工具不出现在 prompt 中，模型无法调用（不是执行时才拦截，而是根本不声明）。</li>
+     * </ol>
+     */
+    public String chatWithPermissionTools(String message, String conversationId, String username) {
+        List<String> allowedToolNames = toolPermissionService.getAllowedToolNames(username);
+        List<ToolCallback> allowedCallbacks = Arrays.stream(ToolCallbacks.from(localTools))
+                .filter(callback -> allowedToolNames.contains(callback.getToolDefinition().name()))
+                .toList();
+
+        return chatClient.prompt()
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+                .user(message)
+                .toolCallbacks(allowedCallbacks)
                 .call()
                 .content();
     }

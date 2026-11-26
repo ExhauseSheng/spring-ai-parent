@@ -4,6 +4,10 @@
 spring:
   application:
     name: quick-start
+  # 启动时执行 classpath:schema.sql / data.sql（建用户、权限与工具授权表，幂等）
+  sql:
+    init:
+      mode: always
   # 对话记忆持久化到本地 MySQL（spring_ai 库）
   datasource:
     url: "jdbc:mysql://localhost:3306/spring_ai?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf-8"

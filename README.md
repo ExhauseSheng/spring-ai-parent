@@ -8,6 +8,8 @@ Spring AI 多模块项目（Spring Boot 3 + JDK 17）。
 - Spring AI 1.1.8（BOM 统一管理版本）
 - Spring AI Alibaba 1.1.2.3（阿里云百炼 / DashScope）
 - Ollama（本地大模型，当前接入 qwen3:8b）
+- MyBatis-Plus 3.5.18.1（airline-cs 订单数据访问）
+- Vue 3 + Vite（frontend 航空客服前端）
 - Java 17（`<java.version>17</java.version>`，高版本 JDK 也可编译运行）
 - Maven（已含 Maven Wrapper：`mvnw` / `mvnw.cmd`）
 
@@ -15,16 +17,16 @@ Spring AI 多模块项目（Spring Boot 3 + JDK 17）。
 
 ```
 spring-ai-parent/            父工程（packaging=pom，统一依赖与版本管理）
-└── quick-start/             快速上手模块，接入 DeepSeek 模型能力
-    ├── src/main/java/com/example/springai/
-    │   ├── QuickStartApplication.java          启动类
-    │   ├── service/ChatService.java            DeepSeek 对话服务（Spring AI ChatClient）
-    │   ├── service/BailianChatService.java     阿里云百炼对话服务（Qwen）
-    │   ├── service/OllamaChatService.java      Ollama 本地模型对话服务（qwen3:8b）
-    │   ├── web/ChatController.java             DeepSeek 接口 POST /api/chat（含流式 /stream）
-    │   ├── web/BailianChatController.java      百炼接口 POST /api/bailian/chat
-    │   └── web/OllamaChatController.java       Ollama 接口 POST /api/ollama/chat
-    └── src/main/resources/application.properties   DeepSeek + 百炼 + Ollama 配置
+├── quick-start/             快速上手模块：DeepSeek / 百炼 / Ollama、Advisor、结构化输出、Tools 等
+│   └── src/main/resources/application.yml      DeepSeek + 百炼 + Ollama 配置
+├── airline-cs/              航空智能客服实战（端口 8081）
+│   ├── tools/FlightOrderTools.java             订单查询 / 退订 Tools（三重退订门禁）
+│   ├── service/AirlineChatService.java         DeepSeek + JDBC 对话记忆 + 系统提示词流程约束
+│   ├── domain/AirlineOrder.java                订单实体（MyBatis-Plus）
+│   ├── mapper/AirlineOrderMapper.java          订单 Mapper（BaseMapper）
+│   └── web/                                    POST /api/chat、GET /api/orders
+└── frontend/               航空客服 Vue3 前端（Vite，端口 5173，/api 代理到 8081）
+    └── src/components/                         OrderTable 订单表格 + ChatPanel 对话框
 ```
 
 ## 前置条件
@@ -50,6 +52,12 @@ export DASHSCOPE_API_KEY=sk-xxxxxxxx       # 可选；未设置时百炼功能�
 # 启动 quick-start 模块（默认端口 8080）
 ./mvnw -pl quick-start spring-boot:run
 
+# 启动航空智能客服后端（端口 8081，需 DEEPSEEK_API_KEY 与本地 MySQL）
+./mvnw -pl airline-cs spring-boot:run
+
+# 启动航空客服前端（端口 5173，/api 自动代理到 8081）
+cd frontend && npm install && npm run dev
+
 # 打包
 ./mvnw clean package -DskipTests
 java -jar quick-start/target/quick-start-0.0.1-SNAPSHOT.jar
@@ -74,6 +82,14 @@ curl -X POST http://localhost:8080/api/bailian/chat \
 curl -X POST http://localhost:8080/api/ollama/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "你好，介绍一下你自己"}'
+
+# 航空智能客服对话（airline-cs，8081；可先查后退订，流程由门禁强制）
+curl -X POST http://localhost:8081/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "我要退订订单FL001"}'
+
+# 航空订单列表
+curl http://localhost:8081/api/orders
 ```
 
 返回：

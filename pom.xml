@@ -20,6 +20,7 @@
 
     <modules>
         <module>quick-start</module>
+        <module>airline-cs</module>
     </modules>
 
     <properties>

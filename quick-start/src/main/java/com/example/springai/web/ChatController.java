@@ -2,6 +2,7 @@ package com.example.springai.web;
 
 import com.example.springai.service.ChatService;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,6 +41,23 @@ public class ChatController {
     public ChatReply chatWithTools(@RequestBody ChatRequest request) {
         String conversationId = resolveConversationId(request.conversationId());
         return new ChatReply(chatService.chatWithTools(request.message(), conversationId), conversationId);
+    }
+
+    /**
+     * 按权限动态下发工具的对话（需 HTTP Basic 认证，权限映射存 MySQL）：
+     * <pre>
+     * curl -u alice:password -X POST http://localhost:8080/api/chat/tools/dynamic \
+     *   -H "Content-Type: application/json" -d '{"message":"查U10086的VIP等级和北京天气"}'
+     * </pre>
+     * alice（ROLE_WEATHER）只能用天气工具，bob（ROLE_VIP）只能用 VIP 工具。
+     */
+    @PostMapping("/tools/dynamic")
+    public ChatReply chatWithDynamicTools(@RequestBody ChatRequest request, Authentication authentication) {
+        String conversationId = resolveConversationId(request.conversationId());
+        String username = authentication.getName();
+        return new ChatReply(
+                chatService.chatWithPermissionTools(request.message(), conversationId, username),
+                conversationId);
     }
 
     /**

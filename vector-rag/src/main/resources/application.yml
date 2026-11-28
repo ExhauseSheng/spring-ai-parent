@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: vector-rag
+  # 与 quick-start / airline-cs 共用本地 MySQL 的 spring_ai 库
+  datasource:
+    url: "jdbc:mysql://localhost:3306/spring_ai?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf-8"
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: always
+  ai:
+    # ---- DeepSeek：对话 ----
+    deepseek:
+      api-key: "${DEEPSEEK_API_KEY}"
+      chat:
+        options:
+          model: deepseek-chat
+    # ---- 本地 Ollama：向量模型 ----
+    ollama:
+      base-url: http://localhost:11434
+      embedding:
+        options:
+          model: qwen3-embedding:0.6b
+    # ---- 本地 Milvus：向量库（维度必须与向量模型一致，实测 qwen3-embedding:0.6b = 1024） ----
+    vectorstore:
+      milvus:
+        client:
+          host: localhost
+          port: 19530
+        collection-name: vector_rag_docs
+        embedding-dimension: 1024
+        initialize-schema: true
+
+server:
+  # 8080 quick-start / 8081 airline-cs
+  port: 8082
+
+# 知识文档上传大小限制（PDF/Office 等二进制文档）
+servlet:
+  multipart:
+    max-file-size: 10MB
+    max-request-size: 12MB
+
+logging:
+  level:
+    # 日志拦截 Advisor：打印含检索上下文的完整请求
+    "org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor": DEBUG

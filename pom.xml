@@ -21,6 +21,7 @@
     <modules>
         <module>quick-start</module>
         <module>airline-cs</module>
+        <module>vector-rag</module>
     </modules>
 
     <properties>

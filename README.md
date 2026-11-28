@@ -9,6 +9,7 @@ Spring AI 多模块项目（Spring Boot 3 + JDK 17）。
 - Spring AI Alibaba 1.1.2.3（阿里云百炼 / DashScope）
 - Ollama（本地大模型，当前接入 qwen3:8b）
 - MyBatis-Plus 3.5.18.1（airline-cs 订单数据访问）
+- Milvus（本地向量库）+ Ollama qwen3-embedding:0.6b（本地向量模型，1024 维）
 - Vue 3 + Vite（frontend 航空客服前端）
 - Java 17（`<java.version>17</java.version>`，高版本 JDK 也可编译运行）
 - Maven（已含 Maven Wrapper：`mvnw` / `mvnw.cmd`）
@@ -25,6 +26,9 @@ spring-ai-parent/            父工程（packaging=pom，统一依赖与版本�
 │   ├── domain/AirlineOrder.java                订单实体（MyBatis-Plus）
 │   ├── mapper/AirlineOrderMapper.java          订单 Mapper（BaseMapper）
 │   └── web/                                    POST /api/chat、GET /api/orders
+├── vector-rag/              向量数据库测试模块（端口 8082）
+│   ├── service/RagService.java                 文档入库 + RetrievalAugmentationAdvisor 检索增强对话
+│   └── web/RagController.java                  /api/rag/documents、/api/rag/search、/api/rag/chat
 └── frontend/               航空客服 Vue3 前端（Vite，端口 5173，/api 代理到 8081）
     └── src/components/                         OrderTable 订单表格 + ChatPanel 对话框
 ```
@@ -54,6 +58,9 @@ export DASHSCOPE_API_KEY=sk-xxxxxxxx       # 可选；未设置时百炼功能�
 
 # 启动航空智能客服后端（端口 8081，需 DEEPSEEK_API_KEY 与本地 MySQL）
 ./mvnw -pl airline-cs spring-boot:run
+
+# 启动向量 RAG 模块（端口 8082，需 DEEPSEEK_API_KEY、本地 MySQL/Milvus/Ollama）
+./mvnw -pl vector-rag spring-boot:run
 
 # 启动航空客服前端（端口 5173，/api 自动代理到 8081）
 cd frontend && npm install && npm run dev
@@ -90,6 +97,14 @@ curl -X POST http://localhost:8081/api/chat \
 
 # 航空订单列表
 curl http://localhost:8081/api/orders
+
+# 向量 RAG：文档入库 / 纯向量检索 / 检索增强对话（vector-rag，8082）
+curl -X POST http://localhost:8082/api/rag/documents -H "Content-Type: application/json" \
+  -d '{"texts": ["Phoenix-777 应急机房位于银川"]}'
+curl -X POST http://localhost:8082/api/rag/search -H "Content-Type: application/json" \
+  -d '{"query": "应急机房在哪", "topK": 3}'
+curl -X POST http://localhost:8082/api/rag/chat -H "Content-Type: application/json" \
+  -d '{"message": "Phoenix-777 的应急机房在哪里？"}'
 ```
 
 返回：
